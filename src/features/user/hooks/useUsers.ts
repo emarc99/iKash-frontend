@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { Users } from "../models/users";
 import { CreateUser } from "../models/createUser";
 import { SetupAccountPayload } from "../models/setupAccount";
@@ -11,18 +11,6 @@ export function useUsers() {
     const [user, setUser] = useState<Users | null>(null);
     const [userFound, setUserFound] = useState<Record<string, Users>>({})
     const { accessToken, setAccessToken, setCurrentUser } = useUser();
-
-    useEffect(() => {
-        fetch(`${process.env.NEXT_PUBLIC_API_URL}/users`)
-            .then((res) => {
-                if (!res.ok) throw new Error('Not found users');
-                return res.json();
-            })
-            .then((data) => {
-                setUsers(data);
-            })
-            .catch(err => console.error(err));
-    }, []);
 
     const getUser = useCallback(async (userId: string) => {
         try {
