@@ -1,5 +1,5 @@
 import { stellarWalletKitService } from "./stellar-wallet-kit.service";
-import { csrfFetch } from "@/lib/csrf";
+import { ApiError, apiFetch } from "@/lib/api";
 
 // Última wallet usada
 const WALLET_ID_KEY = "wallet:provider";
@@ -16,39 +16,12 @@ interface LoginResponse {
     jwt?: string;
 }
 
-function getApiBaseUrl(): string {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-    if (!apiUrl) throw new Error("Backend API URL is not configured.");
-    return apiUrl;
-}
-
 function normalizeSignature(signature: string): string {
     return signature.trim();
 }
 
-class WalletAuthError extends Error {
-    constructor(
-        message: string,
-        readonly status: number,
-        readonly code?: string,
-    ) {
-        super(message);
-        this.name = "WalletAuthError";
-    }
-}
-
-async function createAuthError(response: Response, fallback: string): Promise<WalletAuthError> {
-    const text = await response.text();
-    try {
-        const body = JSON.parse(text) as { error?: string; message?: string };
-        return new WalletAuthError(body.message || fallback, response.status, body.error);
-    } catch {
-        return new WalletAuthError(text || fallback, response.status);
-    }
-}
-
 function isExpiredChallengeError(error: unknown): boolean {
-    if (error instanceof WalletAuthError && error.code === "INVALID_CHALLENGE") {
+    if (error instanceof ApiError && error.code === "INVALID_CHALLENGE") {
         return true;
     }
     const message = error instanceof Error ? error.message : typeof error === "string" ? error : "";
@@ -58,31 +31,22 @@ function isExpiredChallengeError(error: unknown): boolean {
 let authInFlight: Promise<string> | null = null;
 
 async function requestChallenge(publicKey: string): Promise<ChallengeResponse> {
-    const res = await csrfFetch(`${getApiBaseUrl()}/auth/challenge`, {
+    return apiFetch<ChallengeResponse>("/auth/challenge", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ publicKey }),
+        authenticated: false,
+        body: { publicKey },
+        defaultError: "Could not request authentication challenge.",
     });
-
-    if (!res.ok) {
-        throw await createAuthError(res, "Could not request authentication challenge.");
-    }
-
-    return (await res.json()) as ChallengeResponse;
 }
 
 async function requestLogin(publicKey: string, challenge: string, signature: string): Promise<string> {
-    const res = await csrfFetch(`${getApiBaseUrl()}/auth/login`, {
+    const data = await apiFetch<LoginResponse>("/auth/login", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ publicKey, challenge, signature }),
+        authenticated: false,
+        body: { publicKey, challenge, signature },
+        defaultError: "Could not complete login.",
     });
 
-    if (!res.ok) {
-        throw await createAuthError(res, "Could not complete login.");
-    }
-
-    const data = (await res.json()) as LoginResponse;
     return data.access_token || data.token || data.jwt || "";
 }
 

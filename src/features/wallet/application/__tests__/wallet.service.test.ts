@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { isSignatureCancelled, walletService } from "../wallet.service";
 import { stellarWalletKitService } from "../stellar-wallet-kit.service";
-import { clearCsrfToken } from "@/lib/csrf";
+import { resetCsrfToken } from "@/lib/api";
 
 vi.mock("../stellar-wallet-kit.service", () => ({
     stellarWalletKitService: {
@@ -127,7 +127,7 @@ describe("walletService", () => {
             localStorage.setItem("wallet:provider", "freighter-id");
             localStorage.setItem("wallet:publicKey", "G123");
             process.env.NEXT_PUBLIC_API_URL = "http://127.0.0.1:3001";
-            clearCsrfToken();
+            resetCsrfToken();
         });
 
         it("requests a challenge, signs it through the kit, and logs in with the returned token", async () => {
