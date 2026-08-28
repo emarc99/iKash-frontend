@@ -10,6 +10,14 @@ vi.mock("next/navigation", () => ({
     useSearchParams: () => ({ get: () => null }),
 }));
 
+vi.mock("@/features/notifications", () => ({
+    useNotifications: () => ({
+        notify: vi.fn(),
+        dismiss: vi.fn(),
+        dismissAll: vi.fn(),
+    }),
+}));
+
 vi.mock("@/features/wallet", () => ({
     useWallet: () => ({ publicKey: "GTRAPTRIGGER" }),
     useWalletBalance: () => ({
@@ -60,10 +68,11 @@ describe("SendFundsModal", () => {
         render(<SendFundsModal onClose={vi.fn()} />);
 
         const dialog = screen.getByRole("dialog");
-        const amountInput = within(dialog).getByPlaceholderText("0.00");
+        const focusableButtons = within(dialog).getAllByRole("button").filter(b => !b.hasAttribute("disabled"));
+        const lastControl = focusableButtons[focusableButtons.length - 1];
 
-        amountInput.focus();
-        fireEvent.keyDown(amountInput, { key: "Tab" });
+        lastControl.focus();
+        fireEvent.keyDown(lastControl, { key: "Tab" });
 
         expect(document.activeElement).toBe(within(dialog).getAllByRole("button")[0]);
     });

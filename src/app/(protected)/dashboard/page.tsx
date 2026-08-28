@@ -3,6 +3,7 @@
 import { Aside } from "../../components/Aside";
 import { Header } from "../../components/Header";
 import { WalletDashboard } from "./components/WalletDashboard";
+import { MarketSnapshot } from "./components/MarketSnapshot";
 import { ActiveOrdersSection } from "@/features/order/components/ActiveOrdersSection";
 import { useUser } from "@/features/user/presentation/context/UserContext";
 import { Suspense } from "react";
@@ -30,8 +31,9 @@ export default function DashboardPage() {
                         <WalletDashboard />
                     </Suspense>
 
-                    <div className="px-4 pb-24 md:px-12 md:pb-12">
+                    <div className="grid grid-cols-1 gap-6 px-4 pb-24 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)] lg:gap-8 md:px-12 md:pb-12">
                         <ActiveOrdersSection />
+                        <MarketSnapshot />
                     </div>
                 </main>
             </div>
