@@ -1,4 +1,5 @@
 import { stellarWalletKitService } from "./stellar-wallet-kit.service";
+import { csrfFetch } from "@/lib/csrf";
 
 // Última wallet usada
 const WALLET_ID_KEY = "wallet:provider";
@@ -57,7 +58,7 @@ function isExpiredChallengeError(error: unknown): boolean {
 let authInFlight: Promise<string> | null = null;
 
 async function requestChallenge(publicKey: string): Promise<ChallengeResponse> {
-    const res = await fetch(`${getApiBaseUrl()}/auth/challenge`, {
+    const res = await csrfFetch(`${getApiBaseUrl()}/auth/challenge`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ publicKey }),
@@ -71,7 +72,7 @@ async function requestChallenge(publicKey: string): Promise<ChallengeResponse> {
 }
 
 async function requestLogin(publicKey: string, challenge: string, signature: string): Promise<string> {
-    const res = await fetch(`${getApiBaseUrl()}/auth/login`, {
+    const res = await csrfFetch(`${getApiBaseUrl()}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ publicKey, challenge, signature }),

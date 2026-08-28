@@ -1,5 +1,6 @@
 import { useCallback } from "react";
 import { useUser } from "../features/user/presentation/context/UserContext";
+import { csrfFetch } from "./csrf";
 
 export class ApiError extends Error {
     status: number;
@@ -35,7 +36,7 @@ export function useApi() {
             headers.set("Authorization", `Bearer ${accessToken}`);
         }
 
-        const res = await fetch(url, { ...options, headers });
+        const res = await csrfFetch(url, { ...options, headers });
 
         if (res.status === 401) {
             logout();

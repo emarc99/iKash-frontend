@@ -1,4 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach, beforeAll } from "vitest";
+import { clearCsrfToken, getCsrfToken } from "@/lib/csrf";
 import { renderHook, act } from "@testing-library/react";
 import { useOrders } from "../useOrders";
 import { ApiError } from "@/lib/api";
@@ -36,6 +37,15 @@ export function createWrapper() {
 
 describe("useOrders", () => {
     const logout = vi.fn();
+
+    beforeAll(async () => {
+        vi.stubEnv("NEXT_PUBLIC_API_URL", "http://localhost:3000");
+        vi.stubGlobal("fetch", vi.fn().mockResolvedValue(
+            mockFetchResponse(200, { csrfToken: "csrf-token" }),
+        ));
+        clearCsrfToken();
+        await getCsrfToken();
+    });
 
     beforeEach(() => {
         vi.clearAllMocks();

@@ -21,7 +21,7 @@ export default function DashboardPage() {
                     name={displayName}
                     mobileLabel="Welcome back"
                 />
-                <main className="flex items-start justify-between md:pl-12">
+                <main className="flex flex-col w-full min-w-0">
                     <Suspense fallback={
                         <div className="w-full flex items-center justify-center p-8">
                             <div className="w-8 h-8 border-4 border-[#BCED09] border-t-transparent rounded-full animate-spin" />
@@ -29,16 +29,11 @@ export default function DashboardPage() {
                     }>
                         <WalletDashboard />
                     </Suspense>
-                    {/* Active Orders — right panel (desktop) */}
-                    <div className="hidden md:flex flex-col flex-1 min-w-0 pt-12 pr-8 pl-10">
+
+                    <div className="px-4 pb-24 md:px-12 md:pb-12">
                         <ActiveOrdersSection />
                     </div>
                 </main>
-
-                {/* Active Orders — mobile (below wallet) */}
-                <div className="md:hidden px-4 pb-24">
-                    <ActiveOrdersSection />
-                </div>
             </div>
         </div>
     );
