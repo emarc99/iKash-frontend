@@ -1,7 +1,7 @@
 "use client"
 
-import Image from "next/image";
 import Link from "next/link";
+import { ArrowDownLeft, ArrowUpRight, Landmark, Plus, ShoppingCart, Tag } from "lucide-react";
 import { useWallet } from "@/features/wallet";
 import { useWalletBalanceViewModel } from "@/features/dashboard/hooks/useWalletBalanceViewModel";
 import { WalletBalanceCard } from "@/features/dashboard/components/WalletBalanceCard";
@@ -14,9 +14,9 @@ const CreateOfferModal = dynamic(() => import("../../p2p/components/CreateOfferM
 import { useSearchParams } from "next/navigation";
 
 const SECONDARY_ACTIONS = [
-    { src: "/Clip.png", label: "Offers", href: "/p2p" },
-    { src: "/Cart.png", label: "Buy", href: "/p2p" },
-    { src: "/Bank.png", label: "Withdraw", href: "/transactions" },
+    { Icon: Tag, label: "Offers", href: "/p2p" },
+    { Icon: ShoppingCart, label: "Buy", href: "/p2p" },
+    { Icon: Landmark, label: "Withdraw", href: "/transactions" },
 ];
 
 export function WalletDashboard() {
@@ -32,7 +32,9 @@ export function WalletDashboard() {
     const [isSendModalOpen, setIsSendModalOpen] = useState(sendParam === "true" || !!walletParam);
 
     const circleButton =
-        "inline-flex items-center justify-center w-11 h-11 rounded-full overflow-hidden shrink-0 transition-opacity hover:opacity-80";
+        "inline-flex items-center justify-center w-11 h-11 rounded-full shrink-0 border border-[#2E2E32] text-[#8F8389] " +
+        "hover:text-[#BCED09] hover:border-[#BCED09] hover:bg-[#BCED09]/10 focus-visible:outline-none " +
+        "focus-visible:ring-2 focus-visible:ring-[#BCED09]/60 transition-colors";
 
     const actions = (
         <div className="flex items-center justify-between gap-4 flex-wrap">
@@ -42,9 +44,7 @@ export function WalletDashboard() {
                 className="flex items-center gap-3 bg-[#BCED09] hover:bg-[#d4f53a] text-black text-sm font-bold pl-6 pr-5 py-3.5 rounded-full transition-colors shrink-0"
             >
                 Create Offer
-                <svg viewBox="0 0 14 14" className="w-4 h-4" fill="none" aria-hidden="true">
-                    <path d="M7 1v12M1 7h12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-                </svg>
+                <Plus className="w-4 h-4" strokeWidth={2.5} aria-hidden="true" />
             </button>
 
             <div className="flex items-center gap-3 flex-wrap">
@@ -55,7 +55,7 @@ export function WalletDashboard() {
                     className={circleButton}
                     onClick={() => setIsSendModalOpen(true)}
                 >
-                    <Image src="/arrow-up.png" alt="" width={44} height={44} className="w-full h-full object-cover" />
+                    <ArrowUpRight className="w-5 h-5" aria-hidden="true" />
                 </button>
                 <button
                     type="button"
@@ -64,18 +64,18 @@ export function WalletDashboard() {
                     className={circleButton}
                     onClick={() => setIsReceiveModalOpen(true)}
                 >
-                    <Image src="/arrow-down.png" alt="" width={44} height={44} className="w-full h-full object-cover" />
+                    <ArrowDownLeft className="w-5 h-5" aria-hidden="true" />
                 </button>
 
-                {SECONDARY_ACTIONS.map((action) => (
+                {SECONDARY_ACTIONS.map(({ Icon, label, href }) => (
                     <Link
-                        key={action.src}
-                        href={action.href}
-                        aria-label={action.label}
-                        title={action.label}
+                        key={label}
+                        href={href}
+                        aria-label={label}
+                        title={label}
                         className={circleButton}
                     >
-                        <Image src={action.src} alt="" width={44} height={44} className="w-full h-full object-cover" />
+                        <Icon className="w-5 h-5" aria-hidden="true" />
                     </Link>
                 ))}
             </div>

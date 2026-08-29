@@ -14,22 +14,19 @@ export function WalletAssetRow({ asset }: WalletAssetRowProps) {
             className="flex-1 min-h-16 flex items-center justify-between gap-3 px-3 md:px-4 py-3 rounded-2xl bg-[#141416] border border-[#1F1F22] hover:border-[#2A2A2E] transition-colors"
         >
             <div className="flex items-center gap-3 md:gap-4 min-w-0">
-                {asset.icon ? (
-                    <Image
-                        src={asset.icon}
-                        alt={`${asset.code} logo`}
-                        width={45}
-                        height={45}
-                        className="w-12 h-12 rounded-full object-cover shrink-0"
-                    />
-                ) : (
-                    <div
-                        aria-hidden="true"
-                        className="w-10 h-10 rounded-full bg-[#1E1E22] border border-[#2A2A2E] flex items-center justify-center shrink-0 text-white font-bold text-[10px]"
-                    >
-                        {asset.code.slice(0, 3)}
-                    </div>
-                )}
+                <div className="w-10 h-10 rounded-full bg-[#1E1E22] border border-[#2A2A2E] flex items-center justify-center overflow-hidden shrink-0 text-white font-bold text-[10px]">
+                    {asset.icon ? (
+                        <Image
+                            src={asset.icon}
+                            alt={`${asset.code} logo`}
+                            width={40}
+                            height={40}
+                            className="w-full h-full object-cover"
+                        />
+                    ) : (
+                        <span aria-hidden="true">{asset.code.slice(0, 3)}</span>
+                    )}
+                </div>
 
                 <div className="min-w-0">
                     <p className="text-white font-bold text-sm tracking-wide truncate">

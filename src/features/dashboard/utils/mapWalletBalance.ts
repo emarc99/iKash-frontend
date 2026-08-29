@@ -7,8 +7,8 @@ import type {
 export const DISPLAY_CURRENCY = "USD";
 
 const ASSET_METADATA: Record<string, { name: string; icon?: string }> = {
-    XLM: { name: "Stellar Lumens", icon: "/XLM-new.png" },
-    USDC: { name: "USD Coin", icon: "/BTC.png" },
+    XLM: { name: "Stellar Lumens", icon: "/xlm.png" },
+    USDC: { name: "USD Coin", icon: "/usdc.png" },
 };
 
 export const BASELINE_ASSET_CODES = ["XLM", "USDC"];
@@ -49,8 +49,8 @@ function resolveCode(asset: AssetBalance): string {
 }
 
 function formatAmount(value: number): string {
-    const truncated = Math.trunc(value * 100) / 100;
-    return truncated.toLocaleString("en-US", {
+    const rounded = Math.round(value * 100) / 100;
+    return rounded.toLocaleString("en-US", {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2,
     });
