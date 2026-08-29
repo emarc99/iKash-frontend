@@ -101,7 +101,7 @@ export function Navbar({ onConnectClick }: { onConnectClick?: () => void }) {
 	};
 
 	return (
-		<nav ref={navRef} className="w-full bg-[#010308CC] border-b border-[#FFFFFF1A] backdrop-blur-md sticky top-0 z-50 px-4 md:px-8">
+		<nav ref={navRef} aria-label="Public Navigation" className="w-full bg-[#010308CC] border-b border-[#FFFFFF1A] backdrop-blur-md sticky top-0 z-50 px-4 md:px-8">
 			<div className="max-w-7xl mx-auto flex items-center justify-between h-16">
 				<div className="flex flex-row items-center gap-4">
 					<Image
@@ -195,7 +195,7 @@ export function Navbar({ onConnectClick }: { onConnectClick?: () => void }) {
 			{/* Mobile Menu Dropdown */}
 			{mobileMenuOpen && (
 				<div className="md:hidden absolute top-16 left-0 w-full bg-[#010308] border-b border-[#FFFFFF1A] shadow-2xl z-40 py-4 px-4 flex flex-col gap-6">
-					<ul className="flex flex-col gap-4">
+					<ul className="flex flex-col gap-4" aria-label="Mobile Navigation Menu">
 						{navLinks.map((link) => {
 							const isActive = pathname === link.href;
 							return (

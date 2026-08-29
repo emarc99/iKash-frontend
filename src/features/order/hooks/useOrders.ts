@@ -3,22 +3,32 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Order } from "../models/order";
 import { CreateOrder } from "../models/createOrder";
 import { UpdateOrder } from "../models/updateOrder";
-import { useApi, ApiError } from "@/lib/api";
+import { apiFetch, ApiError } from "@/lib/api";
 import { queryKeys } from "@/lib/queryKeys";
 
 export { ApiError };
 
 export function useOrders() {
-    const { apiFetch } = useApi();
     const queryClient = useQueryClient();
 
     const [userId, setUserId] = useState<string | null>(null);
 
-    const { data: orders = [] } = useQuery<Order[]>({
+    const {
+        data: orders = [],
+        isLoading,
+        isFetched,
+        isError,
+        error: queryError,
+        refetch,
+    } = useQuery<Order[]>({
         queryKey: userId ? queryKeys.orders.user(userId) : queryKeys.orders.all,
-        queryFn: () => apiFetch(userId ? `/orders?userId=${userId}` : `/orders`),
+        queryFn: () => apiFetch<Order[]>(userId ? `/orders?userId=${userId}` : `/orders`),
         enabled: !!userId,
     });
+
+    const error = isError
+        ? (queryError instanceof Error ? queryError.message : "Orders not found")
+        : null;
 
     const fetchUserOrders = useCallback(async (id: string) => {
         setUserId(id);
@@ -27,14 +37,14 @@ export function useOrders() {
     const getOrder = async (orderId: string) => {
         return await queryClient.fetchQuery({
             queryKey: queryKeys.orders.detail(orderId),
-            queryFn: () => apiFetch(`/orders/${orderId}`),
+            queryFn: () => apiFetch<Order>(`/orders/${orderId}`),
         });
     };
 
     const { mutateAsync: createOrder } = useMutation({
-        mutationFn: (newOrder: CreateOrder) => apiFetch('/orders', {
+        mutationFn: (newOrder: CreateOrder) => apiFetch<Order>('/orders', {
             method: "POST",
-            body: JSON.stringify(newOrder)
+            body: newOrder
         }),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: queryKeys.orders.all });
@@ -42,9 +52,9 @@ export function useOrders() {
     });
 
     const { mutateAsync: updateOrder } = useMutation({
-        mutationFn: ({ orderId, update }: { orderId: string, update: UpdateOrder }) => apiFetch(`/orders/${orderId}`, {
+        mutationFn: ({ orderId, update }: { orderId: string, update: UpdateOrder }) => apiFetch<Order>(`/orders/${orderId}`, {
             method: "PATCH",
-            body: JSON.stringify(update)
+            body: update
         }),
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({ queryKey: queryKeys.orders.all });
@@ -53,7 +63,7 @@ export function useOrders() {
     });
 
     const { mutateAsync: cancelOrder } = useMutation({
-        mutationFn: (orderId: string) => apiFetch(`/orders/${orderId}/cancel`, {
+        mutationFn: (orderId: string) => apiFetch<Order>(`/orders/${orderId}/cancel`, {
             method: "POST"
         }),
         onSuccess: (_, orderId) => {
@@ -67,7 +77,11 @@ export function useOrders() {
 
     return { 
         orders, 
-        order: null, 
+        order: null,
+        isLoading: isLoading || (!!userId && !isFetched && !isError),
+        hasFetched: isFetched,
+        error,
+        refetch,
         createOrder, 
         getOrder, 
         updateOrder: wrappedUpdateOrder, 

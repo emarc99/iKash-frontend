@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { NotificationProvider } from "@/features/notifications";
+import { CookieConsentBanner } from "./components/CookieConsentBanner";
 import { UserProvider } from "../features/user/presentation/context/UserContext";
 import { WalletProvider } from "../features/wallet";
 import { Space_Grotesk } from "next/font/google";
@@ -31,6 +32,7 @@ export default function RootLayout({
             <UserProvider>
               <WalletProvider>
                 {children}
+                <CookieConsentBanner />
               </WalletProvider>
             </UserProvider>
           </NotificationProvider>
