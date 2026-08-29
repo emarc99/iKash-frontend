@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { isSignatureCancelled, walletService } from "../wallet.service";
 import { stellarWalletKitService } from "../stellar-wallet-kit.service";
+import { resetCsrfToken } from "@/lib/api";
 
 vi.mock("../stellar-wallet-kit.service", () => ({
     stellarWalletKitService: {
@@ -107,16 +108,33 @@ describe("walletService", () => {
     });
 
     describe("authenticate", () => {
+        function mockAuthFetch(responses: Array<{ ok: boolean; json: () => Promise<unknown> }>) {
+            const queue = [...responses];
+            fetchMock.mockImplementation((url: string) => {
+                if (String(url).endsWith("/auth/csrf")) {
+                    return Promise.resolve({ ok: true, json: async () => ({ csrfToken: "csrf-token" }) });
+                }
+                const next = queue.shift();
+                if (!next) return Promise.reject(new Error(`Unexpected fetch: ${String(url)}`));
+                return Promise.resolve(next);
+            });
+        }
+
+        const authCalls = () =>
+            fetchMock.mock.calls.filter(([url]) => !String(url).endsWith("/auth/csrf"));
+
         beforeEach(() => {
             localStorage.setItem("wallet:provider", "freighter-id");
             localStorage.setItem("wallet:publicKey", "G123");
             process.env.NEXT_PUBLIC_API_URL = "http://127.0.0.1:3001";
+            resetCsrfToken();
         });
 
         it("requests a challenge, signs it through the kit, and logs in with the returned token", async () => {
-            fetchMock
-                .mockResolvedValueOnce({ ok: true, json: async () => ({ challenge: "abc123", expiresAt: "2026-07-14T15:00:00.000Z" }) })
-                .mockResolvedValueOnce({ ok: true, json: async () => ({ access_token: "jwt-token" }) });
+            mockAuthFetch([
+                { ok: true, json: async () => ({ challenge: "abc123", expiresAt: "2026-07-14T15:00:00.000Z" }) },
+                { ok: true, json: async () => ({ access_token: "jwt-token" }) },
+            ]);
             mockedKit.signMessage.mockResolvedValueOnce("signed-message");
 
             const token = await walletService.authenticate("G123");
@@ -124,32 +142,48 @@ describe("walletService", () => {
             expect(token).toBe("jwt-token");
             expect(mockedKit.setWallet).toHaveBeenCalledWith("freighter-id");
             expect(mockedKit.signMessage).toHaveBeenCalledWith("abc123", "G123");
-            expect(fetchMock).toHaveBeenCalledTimes(2);
-            expect(fetchMock).toHaveBeenNthCalledWith(2, "http://127.0.0.1:3001/auth/login", expect.objectContaining({
+            expect(authCalls()).toHaveLength(2);
+            expect(fetchMock).toHaveBeenCalledWith("http://127.0.0.1:3001/auth/login", expect.objectContaining({
                 method: "POST",
                 body: JSON.stringify({ publicKey: "G123", challenge: "abc123", signature: "signed-message" }),
             }));
         });
 
+        it("sends the CSRF token with the login request", async () => {
+            mockAuthFetch([
+                { ok: true, json: async () => ({ challenge: "abc123" }) },
+                { ok: true, json: async () => ({ access_token: "jwt-token" }) },
+            ]);
+            mockedKit.signMessage.mockResolvedValueOnce("signed-message");
+
+            await walletService.authenticate("G123");
+
+            const loginCall = fetchMock.mock.calls.find(([url]) => String(url).endsWith("/auth/login"));
+            const init = loginCall?.[1] as RequestInit;
+            expect(new Headers(init.headers).get("x-csrf-token")).toBe("csrf-token");
+            expect(init.credentials).toBe("include");
+        });
+
         it("stops authentication when the wallet signature is rejected", async () => {
-            fetchMock.mockResolvedValueOnce({ ok: true, json: async () => ({ challenge: "abc123" }) });
+            mockAuthFetch([{ ok: true, json: async () => ({ challenge: "abc123" }) }]);
             mockedKit.signMessage.mockRejectedValueOnce({ code: -4, message: "The user rejected this request." });
 
             await expect(walletService.authenticate("G123")).rejects.toThrow("Wallet signature is required to verify ownership and complete login.");
-            expect(fetchMock).toHaveBeenCalledTimes(1);
+            expect(authCalls()).toHaveLength(1);
         });
 
         it("prevents duplicate authentication requests while one is in flight", async () => {
-            fetchMock
-                .mockResolvedValueOnce({ ok: true, json: async () => ({ challenge: "abc123" }) })
-                .mockResolvedValueOnce({ ok: true, json: async () => ({ access_token: "jwt-token" }) });
+            mockAuthFetch([
+                { ok: true, json: async () => ({ challenge: "abc123" }) },
+                { ok: true, json: async () => ({ access_token: "jwt-token" }) },
+            ]);
             mockedKit.signMessage.mockResolvedValueOnce("signed-message");
 
             const [first, second] = await Promise.all([walletService.authenticate("G123"), walletService.authenticate("G123")]);
 
             expect(first).toBe("jwt-token");
             expect(second).toBe("jwt-token");
-            expect(fetchMock).toHaveBeenCalledTimes(2);
+            expect(authCalls()).toHaveLength(2);
         });
     });
 });

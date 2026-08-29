@@ -22,7 +22,7 @@ export default function DashboardPage() {
                     name={displayName}
                     mobileLabel="Welcome back"
                 />
-                <main className="flex items-start justify-between md:pl-12">
+                <main className="flex flex-col w-full min-w-0">
                     <Suspense fallback={
                         <div className="w-full flex items-center justify-center p-8">
                             <div className="w-8 h-8 border-4 border-[#BCED09] border-t-transparent rounded-full animate-spin" />
@@ -30,18 +30,12 @@ export default function DashboardPage() {
                     }>
                         <WalletDashboard />
                     </Suspense>
-                    {/* Right panel (desktop) */}
-                    <div className="hidden md:flex flex-col flex-1 min-w-0 pt-12 pr-8 pl-10 gap-6">
-                        <MarketSnapshot />
+
+                    <div className="grid grid-cols-1 gap-6 px-4 pb-24 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)] lg:gap-8 md:px-12 md:pb-12">
                         <ActiveOrdersSection />
+                        <MarketSnapshot />
                     </div>
                 </main>
-
-                {/* Mobile: MarketSnapshot + Active Orders below wallet */}
-                <div className="md:hidden px-4 pb-24 flex flex-col gap-4">
-                    <MarketSnapshot />
-                    <ActiveOrdersSection />
-                </div>
             </div>
         </div>
     );
