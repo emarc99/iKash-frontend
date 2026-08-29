@@ -45,7 +45,7 @@ export function useSend() {
   });
 
   const resolveAndPrepare = useCallback(
-    async (query: string, amount: string) => {
+    async (query: string, amount: string, assetCode?: string) => {
       setState(s => ({ ...s, step: "loading", errorMessage: null }));
       preparedXdrRef.current = null;
 
@@ -63,10 +63,18 @@ export function useSend() {
         }
         const recipient: RecipientInfo = await resolveRes.json();
 
+        const prepareBody: { recipient: string; amount: string; asset?: string } = {
+          recipient: recipient.address,
+          amount,
+        };
+        if (assetCode && assetCode !== "native") {
+          prepareBody.asset = assetCode;
+        }
+
         const prepareRes = await fetch(`${apiUrl}/send/prepare`, {
           method: "POST",
           headers,
-          body: JSON.stringify({ recipient: recipient.address, amount }),
+          body: JSON.stringify(prepareBody),
         });
         if (!prepareRes.ok) {
           const body = await prepareRes.json().catch(() => ({}));
