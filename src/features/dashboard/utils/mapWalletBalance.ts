@@ -48,11 +48,14 @@ function resolveCode(asset: AssetBalance): string {
     return asset.asset_code || "UNKNOWN";
 }
 
+const DISPLAY_DECIMALS = 4;
+
 function formatAmount(value: number): string {
-    const rounded = Math.round(value * 100) / 100;
-    return rounded.toLocaleString("en-US", {
+    const factor = 10 ** DISPLAY_DECIMALS;
+    const truncated = Math.trunc(value * factor) / factor;
+    return truncated.toLocaleString("en-US", {
         minimumFractionDigits: 2,
-        maximumFractionDigits: 2,
+        maximumFractionDigits: DISPLAY_DECIMALS,
     });
 }
 
