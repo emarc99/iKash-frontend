@@ -17,12 +17,13 @@ export interface BalanceState {
   balances: AssetBalance[]; // All balances
   isLoading: boolean;
   error: string | null;
+  refetch: () => void;
 }
 
 export function useWalletBalance(publicKey: string | null): BalanceState {
   const { apiFetch } = useApi();
 
-  const { data, isLoading, error } = useQuery<AssetBalance[], Error>({
+  const { data, isLoading, error, refetch } = useQuery<AssetBalance[], Error>({
     queryKey: queryKeys.wallet.balance(publicKey),
     queryFn: () => apiFetch(`/stellar/balances/${publicKey}`),
     enabled: !!publicKey,
@@ -36,5 +37,6 @@ export function useWalletBalance(publicKey: string | null): BalanceState {
     balances: data || [],
     isLoading,
     error: error?.message || null,
+    refetch,
   };
 }

@@ -1,5 +1,5 @@
 import { stellarWalletKitService } from "./stellar-wallet-kit.service";
-import { ApiError, getApiBaseUrl } from "@/lib/api";
+import { ApiError, apiFetch } from "@/lib/api";
 
 // Última wallet usada
 const WALLET_ID_KEY = "wallet:provider";
@@ -20,16 +20,6 @@ function normalizeSignature(signature: string): string {
     return signature.trim();
 }
 
-async function createAuthError(response: Response, fallback: string): Promise<ApiError> {
-    const text = await response.text();
-    try {
-        const body = JSON.parse(text) as { error?: string; message?: string };
-        return new ApiError(body.message || fallback, response.status, body.error);
-    } catch {
-        return new ApiError(text || fallback, response.status);
-    }
-}
-
 function isExpiredChallengeError(error: unknown): boolean {
     if (error instanceof ApiError && error.code === "INVALID_CHALLENGE") {
         return true;
@@ -41,31 +31,22 @@ function isExpiredChallengeError(error: unknown): boolean {
 let authInFlight: Promise<string> | null = null;
 
 async function requestChallenge(publicKey: string): Promise<ChallengeResponse> {
-    const res = await fetch(`${getApiBaseUrl()}/auth/challenge`, {
+    return apiFetch<ChallengeResponse>("/auth/challenge", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ publicKey }),
+        authenticated: false,
+        body: { publicKey },
+        defaultError: "Could not request authentication challenge.",
     });
-
-    if (!res.ok) {
-        throw await createAuthError(res, "Could not request authentication challenge.");
-    }
-
-    return (await res.json()) as ChallengeResponse;
 }
 
 async function requestLogin(publicKey: string, challenge: string, signature: string): Promise<string> {
-    const res = await fetch(`${getApiBaseUrl()}/auth/login`, {
+    const data = await apiFetch<LoginResponse>("/auth/login", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ publicKey, challenge, signature }),
+        authenticated: false,
+        body: { publicKey, challenge, signature },
+        defaultError: "Could not complete login.",
     });
 
-    if (!res.ok) {
-        throw await createAuthError(res, "Could not complete login.");
-    }
-
-    const data = (await res.json()) as LoginResponse;
     return data.access_token || data.token || data.jwt || "";
 }
 

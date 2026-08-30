@@ -1,131 +1,112 @@
 "use client"
 
-import Image from "next/image";
+import Link from "next/link";
+import { ArrowDownLeft, ArrowUpRight, Landmark, Plus, ShoppingCart, Tag } from "lucide-react";
 import { useWallet } from "@/features/wallet";
-import { useWalletBalance } from "@/features/wallet/presentation/hooks/useWalletBalance";
+import { useWalletBalanceViewModel } from "@/features/dashboard/hooks/useWalletBalanceViewModel";
+import { WalletBalanceCard } from "@/features/dashboard/components/WalletBalanceCard";
+import { WalletAssetList } from "@/features/dashboard/components/WalletAssetList";
 import { useState } from "react";
 import dynamic from "next/dynamic";
 const SendFundsModal = dynamic(() => import("./SendFundsModal").then(mod => mod.SendFundsModal), { ssr: false });
 const ReceiveFundsModal = dynamic(() => import("./ReceiveFundsModal").then(mod => mod.ReceiveFundsModal), { ssr: false });
+const CreateOfferModal = dynamic(() => import("../../p2p/components/CreateOfferModal").then(mod => mod.CreateOfferModal), { ssr: false });
 import { useSearchParams } from "next/navigation";
+
+const SECONDARY_ACTIONS = [
+    { Icon: Tag, label: "Offers", href: "/p2p" },
+    { Icon: ShoppingCart, label: "Buy", href: "/p2p" },
+    { Icon: Landmark, label: "Withdraw", href: "/transactions" },
+];
 
 export function WalletDashboard() {
     const { publicKey } = useWallet();
-    const { balance, balances, isLoading, error } = useWalletBalance(publicKey);
+    const { viewModel, isLoading, error, retry } = useWalletBalanceViewModel(publicKey);
 
     const [isReceiveModalOpen, setIsReceiveModalOpen] = useState(false);
+    const [isCreateOfferModalOpen, setIsCreateOfferModalOpen] = useState(false);
 
     const searchParams = useSearchParams();
     const sendParam = searchParams.get("send");
     const walletParam = searchParams.get("wallet");
     const [isSendModalOpen, setIsSendModalOpen] = useState(sendParam === "true" || !!walletParam);
 
-    return (
-        <div className="w-full flex flex-col pt-6 px-4 pb-24 md:pt-12 md:pr-8 md:pb-12 md:pl-0 md:border-r md:border-[#1F2937] md:max-w-284">
-            <div
-                className="relative rounded-2xl overflow-hidden p-5 md:p-8 w-full mb-8 shadow-lg"
-                style={{
-                    background: "linear-gradient(135deg, #1a1a1a 0%, #1f2a1a 60%, #2a3a1a 100%)",
-                    boxShadow: "0 0 60px rgba(188,237,9,0.08)",
-                }}
+    const circleButton =
+        "inline-flex items-center justify-center w-11 h-11 rounded-full shrink-0 border border-[#2E2E32] text-[#8F8389] " +
+        "hover:text-[#BCED09] hover:border-[#BCED09] hover:bg-[#BCED09]/10 focus-visible:outline-none " +
+        "focus-visible:ring-2 focus-visible:ring-[#BCED09]/60 transition-colors";
+
+    const actions = (
+        <div className="flex items-center justify-between gap-4 flex-wrap">
+            <button
+                type="button"
+                onClick={() => setIsCreateOfferModalOpen(true)}
+                className="flex items-center gap-3 bg-[#BCED09] hover:bg-[#d4f53a] text-black text-sm font-bold pl-6 pr-5 py-3.5 rounded-full transition-colors shrink-0"
             >
-                <div
-                    className="absolute top-0 right-0 w-64 h-64 rounded-full opacity-20 pointer-events-none"
-                    style={{
-                        background: "radial-gradient(circle, #bced09 0%, transparent 70%)",
-                        transform: "translate(30%, -30%)",
-                    }}
-                />
+                Create Offer
+                <Plus className="w-4 h-4" strokeWidth={2.5} aria-hidden="true" />
+            </button>
 
-                <p className="text-[14px] tracking-[1.4px] text-[#8F8389] uppercase">
-                    Total Balance
-                </p>
+            <div className="flex items-center gap-3 flex-wrap">
+                <button
+                    type="button"
+                    aria-label="Send funds"
+                    title="Send"
+                    className={circleButton}
+                    onClick={() => setIsSendModalOpen(true)}
+                >
+                    <ArrowUpRight className="w-5 h-5" aria-hidden="true" />
+                </button>
+                <button
+                    type="button"
+                    aria-label="Receive funds"
+                    title="Receive"
+                    className={circleButton}
+                    onClick={() => setIsReceiveModalOpen(true)}
+                >
+                    <ArrowDownLeft className="w-5 h-5" aria-hidden="true" />
+                </button>
 
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-                    <div>
-                        <div className="flex items-baseline gap-3">
-
-                            <span className="text-[40px] md:text-[72px] font-bold text-white tracking-tight">
-                                {isLoading ? "..." : error ? "-" : (balance || "0.00")}
-                            </span>
-                            <span className="text-[#8F8389] text-[18px] md:text-[24px] tracking-[-3.6px]">XLM</span>
-                        </div>
-                        {error && <p className="text-red-400 text-xs mt-1">{error}</p>}
-                    </div>
-
-                    <div className="flex gap-3 shrink-0">
-                        <button
-                            className="flex items-center gap-2 bg-[#bced09] hover:bg-[#d4f53a] text-black text-xs font-bold
-                            px-5 py-3 rounded-xl tracking-wider transition-all duration-200 hover:scale-105 active:scale-95"
-                            onClick={() => setIsSendModalOpen(true)}
-                        >
-                            <svg viewBox="0 0 14 14" className="w-3.5 h-3.5" fill="none">
-                                <path d="M2 12L12 2M12 2H5M12 2v7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                            </svg>
-                            SEND
-                        </button>
-                        <button className="flex items-center gap-2 bg-[#2a2a2a] hover:bg-[#333] text-white text-xs font-bold
-                            px-5 py-3 rounded-xl tracking-wider transition-all duration-200 hover:scale-105 active:scale-95 border border-[#3a3a3a]"
-                            onClick={() => setIsReceiveModalOpen(true)}
-                        >
-                            <svg viewBox="0 0 14 14" className="w-3.5 h-3.5" fill="none">
-                                <path d="M12 2L2 12M2 12H9M2 12V5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                            </svg>
-                            RECEIVE
-                        </button>
-                    </div>
-                </div>
+                {SECONDARY_ACTIONS.map(({ Icon, label, href }) => (
+                    <Link
+                        key={label}
+                        href={href}
+                        aria-label={label}
+                        title={label}
+                        className={circleButton}
+                    >
+                        <Icon className="w-5 h-5" aria-hidden="true" />
+                    </Link>
+                ))}
             </div>
+        </div>
+    );
 
-            <div className="w-full flex flex-col mb-8">
-                <div className="flex justify-between items-center mb-4 px-1">
-                    <span className="text-white font-bold text-base tracking-wide">Assets</span>
-                </div>
+    return (
+        <div className="w-full min-w-0 flex flex-col pt-6 px-4 pb-8 md:pt-10 md:px-12 md:pb-10">
+            <div className="w-full rounded-3xl border border-[#1A1A1E] bg-[#0A0A0C] p-4 md:p-6">
+                <div className="w-full grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)] lg:gap-8">
+                    <WalletBalanceCard
+                        totalBalance={viewModel.totalBalance}
+                        currency={viewModel.currency}
+                        isLoading={isLoading}
+                        error={error}
+                        onRetry={retry}
+                        actions={actions}
+                    />
 
-                <div className="space-y-2">
-                    {isLoading ? (
-                        <p className="text-[#8F8389] text-sm p-4">Loading assets...</p>
-                    ) : balances.length === 0 ? (
-                        <p className="text-[#8F8389] text-sm p-4">No assets found</p>
-                    ) : (
-                        balances.map((asset, index) => {
-                            const symbol = asset.asset_type === "native" ? "XLM" : asset.asset_code || "UNKNOWN";
-                            const name = asset.asset_type === "native" ? "STELLAR LUMENS" : symbol;
-                            const amount = parseFloat(asset.balance).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 7 });
-
-                            return (
-                                <div
-                                    key={`${symbol}-${index}`}
-                                    className="flex items-center justify-between p-4 rounded-xl bg-[#161618] border border-[#1f1f1f] hover:border-[#2a2a2a] hover:bg-[#181818] transition-all duration-200 cursor-pointer group"
-                                >
-                                    <div className="flex items-center gap-4">
-                                        <div className="w-10 h-10 rounded-full bg-[#1a2a3a] flex items-center justify-center border border-[#2a2a2a] text-white font-bold text-xs overflow-hidden shrink-0">
-                                            {symbol === "XLM" ? (
-                                                <Image src="/xlm.png" alt="XLM" width={40} height={40} className="w-full h-full object-cover" />
-                                            ) : symbol === "USDC" ? (
-                                                <Image src="/usdc.png" alt="USDC" width={40} height={40} className="w-full h-full object-cover" />
-                                            ) : (
-                                                symbol.slice(0, 3)
-                                            )}
-                                        </div>
-                                        <div>
-                                            <p className="text-white font-bold text-sm tracking-wide">{symbol}</p>
-                                            <p className="text-[#4b5563] text-[10px] tracking-[0.15em] uppercase">{name}</p>
-                                        </div>
-                                    </div>
-
-                                    <div className="text-right">
-                                        <p className="text-white font-bold text-sm tabular-nums">{amount}</p>
-                                    </div>
-                                </div>
-                            );
-                        })
-                    )}
+                    <WalletAssetList
+                        assets={viewModel.assets}
+                        isLoading={isLoading}
+                        error={error}
+                        onRetry={retry}
+                    />
                 </div>
             </div>
 
             {isSendModalOpen && <SendFundsModal onClose={() => setIsSendModalOpen(false)} />}
             {isReceiveModalOpen && <ReceiveFundsModal onClose={() => setIsReceiveModalOpen(false)} />}
+            {isCreateOfferModalOpen && <CreateOfferModal onClose={() => setIsCreateOfferModalOpen(false)} />}
         </div>
     );
 }
