@@ -17,7 +17,8 @@ import { createDemoOrder } from "@/features/order/mocks/demo-order";
 import { DEMO_MODE } from "@/config/demo-mode";
 import { CancelOrderModal } from "../components/CancelOrderModal";
 import { useNotifications } from "@/features/notifications";
-import { ArrowLeft, AlertTriangle, Ban, Loader2 } from "lucide-react";
+import { useEscrowStatusSync } from "@/features/escrow/hooks/useEscrowStatusSync";
+import { ArrowLeft, AlertTriangle, Ban, Loader2, RefreshCw } from "lucide-react";
 import Link from "next/link";
 
 interface PageProps {
@@ -74,6 +75,19 @@ export default function TradePage({ params }: PageProps) {
             fetchOrder();
         }
     }, [currentUser, fetchOrder]);
+
+    // Escrow status sync — kept separate from fetchOrder so that only
+    // the escrow event triggers a refetch, not every render.
+    const handleEscrowStatusChange = useCallback(async () => {
+        await fetchOrder();
+    }, [fetchOrder]);
+
+    const { syncState } = useEscrowStatusSync({
+        orderId,
+        escrowId: order?.escrow?.escrowId,
+        onStatusChange: handleEscrowStatusChange,
+        enabled: !!currentUser && !!order?.escrow?.escrowId && !(orderId === "demo" || orderId.startsWith("mock-")),
+    });
 
     const handleCancelOrder = useCallback(async () => {
         if (!order || isDemoOrder) {
@@ -232,6 +246,17 @@ export default function TradePage({ params }: PageProps) {
                                             TRANSACTION IN PROGRESS
                                         </span>
                                     </>
+                                )}
+                                {syncState.status === "reconnecting" && (
+                                    <span className="flex items-center gap-1 text-[#9CA3AF] text-[10px] font-medium uppercase tracking-wider font-space">
+                                        <RefreshCw className="w-3 h-3 animate-spin" />
+                                        Reconnecting
+                                    </span>
+                                )}
+                                {syncState.status === "error" && (
+                                    <span className="flex items-center gap-1 text-red-400 text-[10px] font-medium uppercase tracking-wider font-space">
+                                        Sync issue — will retry
+                                    </span>
                                 )}
                             </div>
                             <div className="flex items-center gap-4">
